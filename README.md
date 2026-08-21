@@ -350,3 +350,11 @@ On `item.php`, the helper parses only semantic Torn row attributes and item imag
 - Der `item.php`-Full-Load-Coordinator behandelt noch fehlende `data-all`-, `data-from`- und `data-queue`-Attribute sowie verspätetes Load-More-Control oder jQuery als begrenzten, wiederaufnehmbaren Startup-Zustand. Readiness-Wiederholungen verbrauchen keine echten Load-Versuche; nur ausbleibender Fortschritt kann terminal abbrechen.
 - Bazaar-abhängige Sortierungen erhalten nach dem vollständigen Inventory bereits nach einer kurzen Settle-Phase einen ersten Snapshot mit Missing-last, statt auf sämtliche Detailpreise zu warten. Weitere Ergebnisse werden in größeren Ergebnis- beziehungsweise Quiet-Period-Batches und abschließend nach Rundenende aktualisiert.
 - Einzelne Bazaar-Ergebnisse starten nicht länger jeweils einen vollständigen Inventory-Refresh. Der vorhandene Cache-, Queue- und Request-Deduplizierungspfad bleibt unverändert; lokale Kriterien wie Name, Menge, Basis und Trader warten weiterhin nicht auf Bazaar.
+
+
+### Neu in 0.5.11
+
+- Der Full-Inventory-Loader greift über Tampermonkeys `unsafeWindow` auf Torns tatsächlich registriertes Seiten-jQuery zu. Ein bereits ladebereiter Live-Container triggert unmittelbar; der Load-More-Button wird vor jedem Trigger frisch aufgelöst und auf verbundenen, aktiven Zustand geprüft. Private Torn-Inventory-APIs oder Scroll-Automation werden weiterhin nicht verwendet.
+- Sichere, anomaly-freie Marketplace-Detail-Beobachtungen werden kompakt und ohne TTL pro Item unter `WEAV3R_ARBITRAGE_BAZAAR_QUOTES_V1` gespeichert. Gleiche Preise aktualisieren `lastSeenAt` und den Beobachtungszähler; Preisänderungen ersetzen die letzte sichere Beobachtung.
+- Bazaar-Sortierungen können sofort die gespeicherte Marktbeobachtung verwenden und wenden die aktuelle Bazaar-Anpassung jedes Mal neu über die bestehende Pricing Engine an. Fehlende Werte bleiben am Ende; Live-Abfragen laufen priorisiert und mit unveränderter Queue/Concurrency im Hintergrund.
+- Gespeicherte Bazaar-Werte sind ausdrücklich nur Sortier- und Fallback-Anzeigen. Sie werden nicht als aktuell verifizierter Best Sale behandelt und erzeugen keinen regulären Profit oder ROI; Background-Ergebnisse bleiben gebatcht, damit nicht jede Antwort neu sortiert.
