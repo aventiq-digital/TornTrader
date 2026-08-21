@@ -343,3 +343,10 @@ On `item.php`, the helper parses only semantic Torn row attributes and item imag
 - Der Full-Load-Coordinator wartet nach jedem Trigger auf echten Fortschritt bei `data-from`, Row-Anzahl oder `data-all`, erkennt aktive Containerwechsel und bricht bei fehlendem Fortschritt, fehlendem Control oder fehlendem jQuery begrenzt ab. Im Fehlerfall bleibt das vorhandene Teil-Inventar normal nutzbar.
 - Während des Full Loads bleibt die Reihenfolge stabil. Danach warten Bazaar-abhängige Sortierungen auf die bereits gestartete deduplizierte Bewertungsrunde und wenden einen aktuellen Snapshot statt einzelner Zwischenstände an; lokale und statische Kriterien warten nicht unnötig auf Bazaar.
 - Pricing-, Trader-, Cost-Basis-, Best-Sale-, Profit- und ROI-Semantik bleiben unverändert.
+
+
+### Neu in 0.5.10
+
+- Der `item.php`-Full-Load-Coordinator behandelt noch fehlende `data-all`-, `data-from`- und `data-queue`-Attribute sowie verspätetes Load-More-Control oder jQuery als begrenzten, wiederaufnehmbaren Startup-Zustand. Readiness-Wiederholungen verbrauchen keine echten Load-Versuche; nur ausbleibender Fortschritt kann terminal abbrechen.
+- Bazaar-abhängige Sortierungen erhalten nach dem vollständigen Inventory bereits nach einer kurzen Settle-Phase einen ersten Snapshot mit Missing-last, statt auf sämtliche Detailpreise zu warten. Weitere Ergebnisse werden in größeren Ergebnis- beziehungsweise Quiet-Period-Batches und abschließend nach Rundenende aktualisiert.
+- Einzelne Bazaar-Ergebnisse starten nicht länger jeweils einen vollständigen Inventory-Refresh. Der vorhandene Cache-, Queue- und Request-Deduplizierungspfad bleibt unverändert; lokale Kriterien wie Name, Menge, Basis und Trader warten weiterhin nicht auf Bazaar.
