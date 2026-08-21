@@ -335,3 +335,11 @@ On `item.php`, the helper parses only semantic Torn row attributes and item imag
 - Der Trader-Parser crosscheckt Trader-IDs nun über Profile-, Trade-Now- und Pricelist-Links in Trader- **und** Actions-Zelle. Dadurch werden reale Tabellen wie die Xanax-Seite auch dann sicher persistiert, wenn die ID-tragenden Links außerhalb der Trader-Zelle gerendert sind. Strukturierte DEBUG-Ereignisse verfolgen Route, Tabelle, Row-Rejections, Normalisierung, Store-Write, Eligibility und item.php-Auflösung.
 - Die item.php-Sortierung sammelt relevante Sort-Key-Änderungen in einer Quiet-Period und erzwingt spätestens nach einer begrenzten Batch-Zeit eine Anwendung. Unveränderte aktive Keys lösen keine Sortierung aus; Benutzeränderungen und statische Kriterien reagieren unmittelbar.
 - Eigene Blockverschiebungen werden vom Inventory-Observer erkannt und unterdrückt. Async Bazaar-, Trader-, Best-Sale- und Profit-Updates führen damit zu wenigen stabilen Batch-Sorts statt zu einem Reorder pro Einzelergebnis.
+
+
+### Neu in 0.5.9
+
+- Auf `item.php` lädt WAH Torns zunächst lazy dargestelltes eigenes Inventory über das vorhandene `#load-more-items`-Control und Torns normalen delegierten jQuery-Clickweg vollständig nach. Es werden weder private Torn-Funktionen noch eigene Inventory-Endpunkte oder künstliches Scrollen verwendet.
+- Der Full-Load-Coordinator wartet nach jedem Trigger auf echten Fortschritt bei `data-from`, Row-Anzahl oder `data-all`, erkennt aktive Containerwechsel und bricht bei fehlendem Fortschritt, fehlendem Control oder fehlendem jQuery begrenzt ab. Im Fehlerfall bleibt das vorhandene Teil-Inventar normal nutzbar.
+- Während des Full Loads bleibt die Reihenfolge stabil. Danach warten Bazaar-abhängige Sortierungen auf die bereits gestartete deduplizierte Bewertungsrunde und wenden einen aktuellen Snapshot statt einzelner Zwischenstände an; lokale und statische Kriterien warten nicht unnötig auf Bazaar.
+- Pricing-, Trader-, Cost-Basis-, Best-Sale-, Profit- und ROI-Semantik bleiben unverändert.
