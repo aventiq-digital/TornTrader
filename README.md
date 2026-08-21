@@ -321,3 +321,10 @@ On `item.php`, the helper parses only semantic Torn row attributes and item imag
 
 - Manuell geöffnete `weav3r.dev/item/<ID>`-Seiten persistieren sicher erkannte Trader-Tabellen nun über denselben Parser und Quote-Store wie der Hidden-Iframe-Collector. Initial Scan, asynchrones Rendering und SPA-Routenwechsel werden ohne Polling unterstützt.
 - Der bestehende Quote-Key dedupliziert unveränderte Tabellenbeobachtungen im selben History-Record und erhöht deren Beobachtungszähler; Preisänderungen erzeugen weiterhin neue historische Records. Der bestehende `item.php`-Storage-Listener aktualisiert Trader, Best Sale und Profit tabübergreifend ohne Reload.
+
+
+### Neu in 0.5.7
+
+- `item.php` kann die aktuell dargestellten logischen Inventory-Blöcke nach Name, Menge sowie den bereits aufgelösten Basis-, Bazaar-, Trader-, Best-Sale-, Profit- und ROI-Werten sortieren. Fehlende Bewertungswerte bleiben in beiden Richtungen am Ende.
+- Offene Gruppen werden ausschließlich als zusammenhängender Block verschoben; ihre Child-Reihenfolge bleibt erhalten. Containerbezogene stabile Block-Identitäten bewahren die ursprüngliche Torn-Reihenfolge auch über Group-Toggles, Search, Load More und asynchrone Refreshes.
+- Sortierkriterium und Richtung werden separat persistent gespeichert. Exakte BigInt-/Ratio-Vergleiche nutzen ausschließlich die im bestehenden Inventory-Refresh bereits berechneten Strukturen und lösen keine zusätzlichen Store-Lesevorgänge oder Requests aus.
