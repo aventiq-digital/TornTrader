@@ -328,3 +328,10 @@ On `item.php`, the helper parses only semantic Torn row attributes and item imag
 - `item.php` kann die aktuell dargestellten logischen Inventory-Blöcke nach Name, Menge sowie den bereits aufgelösten Basis-, Bazaar-, Trader-, Best-Sale-, Profit- und ROI-Werten sortieren. Fehlende Bewertungswerte bleiben in beiden Richtungen am Ende.
 - Offene Gruppen werden ausschließlich als zusammenhängender Block verschoben; ihre Child-Reihenfolge bleibt erhalten. Containerbezogene stabile Block-Identitäten bewahren die ursprüngliche Torn-Reihenfolge auch über Group-Toggles, Search, Load More und asynchrone Refreshes.
 - Sortierkriterium und Richtung werden separat persistent gespeichert. Exakte BigInt-/Ratio-Vergleiche nutzen ausschließlich die im bestehenden Inventory-Refresh bereits berechneten Strukturen und lösen keine zusätzlichen Store-Lesevorgänge oder Requests aus.
+
+
+### Neu in 0.5.8
+
+- Der Trader-Parser crosscheckt Trader-IDs nun über Profile-, Trade-Now- und Pricelist-Links in Trader- **und** Actions-Zelle. Dadurch werden reale Tabellen wie die Xanax-Seite auch dann sicher persistiert, wenn die ID-tragenden Links außerhalb der Trader-Zelle gerendert sind. Strukturierte DEBUG-Ereignisse verfolgen Route, Tabelle, Row-Rejections, Normalisierung, Store-Write, Eligibility und item.php-Auflösung.
+- Die item.php-Sortierung sammelt relevante Sort-Key-Änderungen in einer Quiet-Period und erzwingt spätestens nach einer begrenzten Batch-Zeit eine Anwendung. Unveränderte aktive Keys lösen keine Sortierung aus; Benutzeränderungen und statische Kriterien reagieren unmittelbar.
+- Eigene Blockverschiebungen werden vom Inventory-Observer erkannt und unterdrückt. Async Bazaar-, Trader-, Best-Sale- und Profit-Updates führen damit zu wenigen stabilen Batch-Sorts statt zu einem Reorder pro Einzelergebnis.
