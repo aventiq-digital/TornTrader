@@ -301,3 +301,17 @@ On `item.php`, the helper parses only semantic Torn row attributes and item imag
 - Sicher beobachtete, konkrete Trader-Buy-Preise aus der bestehenden Weav3r-Trader-Tabelle werden dauerhaft mit Item-, Trader- und Condition-Identität gespeichert. Gleiche Beobachtungen erhöhen Zähler und `lastSeenAt`; Preis- oder Condition-Änderungen bleiben als getrennte Historie erhalten.
 - Trader-Quotes besitzen keinen TTL-Verfall. `item.php` bevorzugt junge Quotes aktuell eligible Trader, zeigt bei fehlender aktueller Verifizierbarkeit aber weiterhin den jüngsten gespeicherten Preis mit sichtbarem Alter und entsprechend vorsichtigem Status.
 - Weav3r bleibt ausschließlich die aktualisierende Quelle: Ist die Seite nicht erreichbar, werden keine Daten erfunden oder gelöscht. Cost Basis, Bazaar und Trader bleiben getrennte Bewertungen; Best Sale, Profit und ROI folgen später.
+
+
+### Neu in 0.5.4
+
+- `item.php` zeigt pro logischem Inventory-Block zusätzlich **Best Sale**: Der reine Resolver vergleicht ausschließlich die sichere Bazaar-Preisempfehlung mit aktuell eligible Trader-Quotes und bevorzugt bei Gleichstand Bazaar.
+- Nicht verifizierte gespeicherte Trader-Quotes schlagen keinen sicheren Bazaar-Wert. Nur wenn kein aktuell verifizierter Verkaufsweg existiert, erscheinen sie ausdrücklich als historischer, unverified Fallback.
+- Stück- und Bruttogesamtwerte bleiben BigInt-basiert. Cost Basis, Bazaar und Trader bleiben separat sichtbar; Profit, ROI und Verkaufsausführung sind nicht Bestandteil dieser Version.
+
+
+### Neu in 0.5.5
+
+- `item.php` zeigt pro logischem Inventory-Block einen potentiellen Bruttogewinn und ROI ausschließlich für kostenmäßig sicher abgedeckte Einheiten und einen aktuell verifizierten Best-Sale-Kanal.
+- Die aktuelle Restbestandsbasis verwendet bei vollständig bekannten bestätigten Inbounds eine BigInt-rationale WAC-Rechnung. Historische Gesamtkosten werden nach Outbounds nicht als Restbasis missverstanden; unbekannte oder widersprüchliche Zuordnungen bleiben nicht verfügbar.
+- Partielle Coverage weist die einbezogene Menge sichtbar aus. Gespeicherte, aktuell unverified Trader-Quotes, unbekannte Bestandsanteile und Verkaufsgebühren fließen nicht in Profit oder ROI ein.
