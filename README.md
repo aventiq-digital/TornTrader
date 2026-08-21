@@ -315,3 +315,9 @@ On `item.php`, the helper parses only semantic Torn row attributes and item imag
 - `item.php` zeigt pro logischem Inventory-Block einen potentiellen Bruttogewinn und ROI ausschließlich für kostenmäßig sicher abgedeckte Einheiten und einen aktuell verifizierten Best-Sale-Kanal.
 - Die aktuelle Restbestandsbasis verwendet bei vollständig bekannten bestätigten Inbounds eine BigInt-rationale WAC-Rechnung. Historische Gesamtkosten werden nach Outbounds nicht als Restbasis missverstanden; unbekannte oder widersprüchliche Zuordnungen bleiben nicht verfügbar.
 - Partielle Coverage weist die einbezogene Menge sichtbar aus. Gespeicherte, aktuell unverified Trader-Quotes, unbekannte Bestandsanteile und Verkaufsgebühren fließen nicht in Profit oder ROI ein.
+
+
+### Neu in 0.5.6
+
+- Manuell geöffnete `weav3r.dev/item/<ID>`-Seiten persistieren sicher erkannte Trader-Tabellen nun über denselben Parser und Quote-Store wie der Hidden-Iframe-Collector. Initial Scan, asynchrones Rendering und SPA-Routenwechsel werden ohne Polling unterstützt.
+- Der bestehende Quote-Key dedupliziert unveränderte Tabellenbeobachtungen im selben History-Record und erhöht deren Beobachtungszähler; Preisänderungen erzeugen weiterhin neue historische Records. Der bestehende `item.php`-Storage-Listener aktualisiert Trader, Best Sale und Profit tabübergreifend ohne Reload.

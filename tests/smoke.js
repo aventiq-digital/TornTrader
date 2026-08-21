@@ -824,7 +824,7 @@ assert.doesNotMatch(source, /Kein Bazaar-Preis verfügbar/);
 assert.match(extractFunction('collectBazaarWithApi'), /`\$\{location\.origin\}\/api\/marketplace\/\$\{encodeURIComponent\(itemId\)\}`/);
 assert.match(extractFunction('collectBazaarWithApi'), /isCurrentRoute\(itemId, generation\)/);
 assert.match(extractFunction('getMarketplaceBatch'), /MARKETPLACE_BATCH_KEY/);
-assert.match(source, /@version\s+0\.5\.5/);
+assert.match(source, /@version\s+0\.5\.6/);
 assert.match(extractFunction('handleItemMarketClick'), /startItemMarketResultObserver\(stage\)/);
 assert.match(extractFunction('createItemMarketPurchaseObserver'), /control: document/);
 assert.match(extractFunction('startItemMarketResultObserver'), /inspect\(root, 'initial'\)/);
@@ -1284,6 +1284,13 @@ assert.throws(() => detailContext.saveDetailedMarketplaceResponse(180, { item_id
   const traderValue = quoteContext.buildInventoryTraderValuation({ status: 'eligible', quote: { price: '812000' } }, 4); assert.equal(traderValue.totalPrice, '3248000'); assert.equal(quoteContext.buildInventoryTraderValuation({ status: 'eligible', quote: { price: '900719925474099312345' } }, 999999).totalPrice, (900719925474099312345n * 999999n).toString());
   assert.equal(quoteContext.resolveInventoryTraderQuote(999, quoteIndex, 4, quoteNow).status, 'unavailable');
 
+  const manualLocation = { href: 'https://weav3r.dev/item/1509', origin: 'https://weav3r.dev' }; let visibleTraders = []; const manualCaptureContext = { URL, Date, JSON, location: manualLocation, document: {}, state: {}, normalizePositiveInt: offerContext.normalizePositiveInt, logDebug() {}, parseTraderOffers() { return visibleTraders; }, persistObservedTraderQuotes: quoteContext.persistObservedTraderQuotes };
+  vm.createContext(manualCaptureContext); vm.runInContext(`${extractFunction('resolveWeav3rItemRouteId')}\n${extractFunction('captureVisibleWeav3rTraderQuotes')}`, manualCaptureContext);
+  assert.equal(manualCaptureContext.captureVisibleWeav3rTraderQuotes(quoteNow).status, 'waiting'); visibleTraders = [{ traderId: 150, traderName: 'Manual Trader', buyPriceExact: '321000', rating: 5, activityText: 'Active now', lastSeenAt: quoteNow }]; const manualCaptured = manualCaptureContext.captureVisibleWeav3rTraderQuotes(quoteNow); assert.equal(manualCaptured.status, 'persisted'); assert.equal(manualCaptured.itemId, 1509); assert.equal(quoteContext.indexLatestTraderQuotes(quoteContext.readTraderQuotes()).get(1509)[0].price, '321000');
+  const recordCountAfterManualCapture = Object.keys(quoteContext.readTraderQuotes().records).length; const repeatedManualCapture = manualCaptureContext.captureVisibleWeav3rTraderQuotes(quoteNow + 1); assert.equal(repeatedManualCapture.status, 'persisted'); assert.equal(Object.keys(quoteContext.readTraderQuotes().records).length, recordCountAfterManualCapture); assert.equal(quoteContext.indexLatestTraderQuotes(quoteContext.readTraderQuotes()).get(1509)[0].observationCount, 2);
+  visibleTraders = [{ ...visibleTraders[0], buyPriceExact: '322000' }]; assert.equal(manualCaptureContext.captureVisibleWeav3rTraderQuotes(quoteNow + 2).status, 'persisted'); assert.equal(Object.keys(quoteContext.readTraderQuotes().records).length, recordCountAfterManualCapture + 1);
+  manualLocation.href = 'https://weav3r.dev/item/367'; visibleTraders = [{ ...visibleTraders[0], traderId: 151, traderName: 'SPA Trader', buyPriceExact: '444000' }]; const spaCaptured = manualCaptureContext.captureVisibleWeav3rTraderQuotes(quoteNow + 3); assert.equal(spaCaptured.itemId, 367); assert.equal(quoteContext.indexLatestTraderQuotes(quoteContext.readTraderQuotes()).get(367).some((quote) => quote.traderId === 151), true); assert.equal(manualCaptureContext.resolveWeav3rItemRouteId('https://weav3r.dev/not-item/1509'), null); assert.equal(manualCaptureContext.resolveWeav3rItemRouteId('https://example.com/item/1509'), null);
+
   const bestSaleContext = { BigInt, normalizePositiveInt: offerContext.normalizePositiveInt, normalizeMoneyString: ledgerContext.normalizeMoneyString, buildInventoryBazaarValuation: bazaarAddContext.buildInventoryBazaarValuation, buildInventoryTraderValuation: quoteContext.buildInventoryTraderValuation };
   vm.createContext(bestSaleContext); vm.runInContext(extractFunction('resolveInventoryBestSale'), bestSaleContext);
   const safeBazaar = (price) => ({ status: 'available', recommendedUnitPrice: String(price), marketUnitPrice: String(price), adjustment: '0', fetchedAt: 123 }); const eligibleTrader = (price, name = 'Trader A') => ({ status: 'eligible', quote: { traderId: 101, traderName: name, price: String(price), lastSeenAt: quoteNow } }); const storedTrader = (price) => ({ status: 'unverified', reason: 'current-status-unverified', quote: { traderId: 202, traderName: 'Stored Trader', price: String(price), lastSeenAt: quoteNow - 999 } });
@@ -1312,16 +1319,19 @@ assert.throws(() => detailContext.saveDetailedMarketplaceResponse(180, { item_id
   assert.match(source, /GM_addValueChangeListener\(TRANSACTION_STORE_REVISION_KEY/);
   assert.match(extractFunction('attachHistoryStorageListeners'), /scheduleTornInventoryBasisRefresh/);
   assert.match(extractFunction('initTornItemInventoryHistory'), /inventoryBazaarResults\.clear\(\); scheduleTornInventoryBasisRefresh/);
-  assert.match(extractFunction('initTornItemInventoryHistory'), /TRADER_QUOTES_KEY, scheduleTornInventoryBasisRefresh/);
+  assert.match(extractFunction('initTornItemInventoryHistory'), /GM_addValueChangeListener\(TRADER_QUOTES_KEY/); assert.match(extractFunction('initTornItemInventoryHistory'), /Trader quote store changed/); assert.match(extractFunction('initTornItemInventoryHistory'), /scheduleTornInventoryBasisRefresh/);
   assert.match(extractFunction('handleRatingStorageChanged'), /scheduleTornInventoryBasisRefresh/);
   assert.equal((extractFunction('refreshTornInventoryBasis').match(/loadBazaarRecommendedPrice\(/g) || []).length, 1); assert.match(extractFunction('refreshTornInventoryBasis'), /requestedItemIds = new Set/); assert.equal(openBlocks.filter((block) => block.model.itemId === 28).length, 1);
   const profitResolverSource = extractFunction('resolveInventoryPotentialProfit'); assert.doesNotMatch(profitResolverSource, /Number\(|parseFloat|toFixed/); assert.doesNotMatch(profitResolverSource, /fetch|XMLHttpRequest|queueBazaarAddMarketplaceDetail|loadBazaarRecommendedPrice/); assert.match(profitResolverSource, /bestSaleResult\.verification !== 'verified'/); assert.match(profitResolverSource, /potentialProfit = subtractBigIntRatios/); assert.doesNotMatch(profitResolverSource, /potentialProfit.*< 0.*0/);
   const inventoryRefreshSource = extractFunction('refreshTornInventoryBasis'); assert.equal((inventoryRefreshSource.match(/listTransactionEvents\(\)/g) || []).length, 1); for (const renderer of ['renderTornInventoryBasis', 'renderTornInventoryBazaar', 'renderTornInventoryTrader', 'renderTornInventoryBestSale', 'renderTornInventoryProfit']) assert.match(inventoryRefreshSource, new RegExp(`${renderer}\\(`));
+  assert.match(inventoryRefreshSource, /indexLatestTraderQuotes\(readTraderQuotes\(\)\)/); assert.doesNotMatch(inventoryRefreshSource, /collectSourceWithIframe|loadBazaarRecommendedPrice\([^)]*trader/);
+  assert.match(extractFunction('initWeav3rArbitrageHelper'), /captureVisibleWeav3rTraderQuotes\(\)/); assert.match(extractFunction('attachPageObservers'), /scheduleVisibleTraderQuoteCapture\(\)/); assert.match(extractFunction('handleRouteChange'), /scheduleVisibleTraderQuoteCapture\(\)/); assert.match(extractFunction('captureVisibleWeav3rTraderQuotes'), /parseTraderOffers\(document, location\.href\)/); assert.match(extractFunction('captureVisibleWeav3rTraderQuotes'), /persistObservedTraderQuotes\(itemId, traders, location\.href/);
+  assert.match(extractFunction('collectSourceWithIframe'), /parseSourceDocument\(iframeDocument/); assert.match(extractFunction('collectSourceWithIframe'), /saveCachedSourceData\(sourceDefinition\.itemId, sourceDefinition\.sourceType/);
   assert.match(source, /if \(source === 'traders' && parsedKey === 'traders'\) persistObservedTraderQuotes/);
   assert.match(extractFunction('chooseBestEligibleTrustedTrader'), /getTrustedTraderEligibility/);
   assert.doesNotMatch(extractFunction('readTraderQuotes'), /TTL|expires|delete/);
   assert.doesNotMatch(source, /gmSetDurable\(TRANSACTION_LEDGER_KEY/);
-  assert.match(source, /@version\s+0\.5\.5/);
+  assert.match(source, /@version\s+0\.5\.6/);
   assert.match(extractFunction('handleSharedHistoryClick'), /kind: 'item', itemId: target\.dataset\.wahItemHistory/);
   console.log('focused Torn inventory and Watchlist action smoke tests passed');
 })().catch((error) => { console.error(error); process.exitCode = 1; });
