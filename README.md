@@ -448,3 +448,11 @@ On `item.php`, the helper parses only semantic Torn row attributes and item imag
 - Added bounded post-load DOM settling for final React inventory commits.
 - **Use All** and target filtering now derive from the complete fresh target-row set and are applied only after final resolution.
 - Existing Trade completeness, transaction, pricing, ownership, Bazaar, and sorting semantics remain unchanged.
+
+### New in 0.5.25
+
+- Added an explicit **Stored best** presentation when only safe stored Bazaar or Trader sale data is available, and removed empty Best Sale placeholders when no meaningful valuation exists.
+- Unified Bazaar value refresh across `item.php`, Bazaar Add, and Bazaar Manage through the existing bounded marketplace request queue; failed or unsafe refreshes retain safe stored fallbacks.
+- Bazaar Manage now shows exact current-versus-recommended pricing states and a summary explicitly scoped to safely parsed visible virtualized listings.
+- Refresh actions never change Torn quantity, price, removal, selection, sorting, or submission state automatically.
+- Verified Best Sale, Profit, ROI, sorting, transactions, ownership, Trade discovery, and final Torn action semantics remain unchanged.
