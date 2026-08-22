@@ -366,3 +366,9 @@ On `item.php`, the helper parses only semantic Torn row attributes and item imag
 - Background-Bazaar-, Best-Sale- und Profit-Aktualisierungen aktualisieren weiterhin Badges und Stores, verändern einen bereits angewandten Sort-Snapshot aber nicht mehr automatisch. Auch das Ende einer Background-Runde löst kein finales Auto-Resort aus.
 - Veränderte aktive Sort-Keys markieren die Reihenfolge als **„Preise aktualisiert“**. Der neue kompakte **„Neu sortieren“**-Button sowie Änderungen von Kriterium oder Richtung wenden genau einmal einen frischen Snapshot aus den bereits aufgelösten Records an und lösen keine Preisabfrage aus.
 - Verified Best Sale, Profit/ROI, Missing-last, Originalreihenfolge und logische Gruppen bleiben fachlich unverändert.
+
+### Neu in 0.5.13
+
+- Weav3r bindet sichtbare Trader-Tabellen an Item-ID **und** Route-Generation. Bei schnellen SPA-Wechseln bleibt die alte Tabelle gesperrt, bis der neue Item-DOM übernommen wurde; veraltete Auswertungen und Antworten können den aktuellen Item-State nicht überschreiben. Legacy-Trader-Caches ohne explizite Item-Bindung werden vorsorglich nicht wiederverwendet.
+- `item.php` bietet den kombinierbaren Filter **„Nur Bazaar-Verkauf“**. Er verwendet direkt die vorhandenen Bazaar-Add-Regeln (`alle verkaufen`, `1 behalten`, `nicht verkaufen`), blendet Verkaufsmenge 0 blockweise aus und zeigt die geplante Verkaufsmenge statt sie aus dem Gesamtbestand neu zu erfinden.
+- Die Weav3r-Itemkarte verlinkt **Bazaar** und **Trade** direkt mit der aktuellen stabilen Item-ID. Beide Ziel-URLs initialisieren die passende Item-Ansicht ohne vorherigen Listenbesuch.
