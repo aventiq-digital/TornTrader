@@ -396,3 +396,10 @@ On `item.php`, the helper parses only semantic Torn row attributes and item imag
 - All user-facing userscript controls, badges, status messages, tooltips, Bazaar Sell Manager copy, and inventory valuation text are now consistently English. Stable storage keys, schemas, and rule enum values remain unchanged.
 - Every logical `item.php` inventory block now exposes the same **Sell all / Keep one / Don't sell** rule used by the Bazaar Sell Manager. Both surfaces persist through the single existing Bazaar sell-rule store and react to cross-tab changes.
 - Sell-rule changes update the structured sellable quantity, **To Bazaar** indicator, sell-only filter, and quantity snapshot locally without initiating price requests or restoring background auto-sorting.
+
+### New in 0.5.18
+
+- Redesigned `item.php` inventory presentation as a full-width, responsive WAH information grid: Best Sale is the primary decision value, Bazaar and Trader form a compact comparison, and basis/profit/sell controls are quieter secondary metadata.
+- Removed repeated Bazaar and Trader totals from the normal row display while retaining exact winning unit and total values in Best Sale and detailed verification context in tooltips.
+- Grouped Bazaar, Trade, and History into one consistent action area; unavailable values now use muted semantic states, while verified and positive/negative values retain restrained, meaningful accents.
+- Simplified the inventory sort toolbar styling without changing frozen snapshots, dirty state, manual Re-sort, grouping, stores, pricing, tracking, or transaction semantics.
