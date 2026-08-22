@@ -358,3 +358,11 @@ On `item.php`, the helper parses only semantic Torn row attributes and item imag
 - Sichere, anomaly-freie Marketplace-Detail-Beobachtungen werden kompakt und ohne TTL pro Item unter `WEAV3R_ARBITRAGE_BAZAAR_QUOTES_V1` gespeichert. Gleiche Preise aktualisieren `lastSeenAt` und den Beobachtungszähler; Preisänderungen ersetzen die letzte sichere Beobachtung.
 - Bazaar-Sortierungen können sofort die gespeicherte Marktbeobachtung verwenden und wenden die aktuelle Bazaar-Anpassung jedes Mal neu über die bestehende Pricing Engine an. Fehlende Werte bleiben am Ende; Live-Abfragen laufen priorisiert und mit unveränderter Queue/Concurrency im Hintergrund.
 - Gespeicherte Bazaar-Werte sind ausdrücklich nur Sortier- und Fallback-Anzeigen. Sie werden nicht als aktuell verifizierter Best Sale behandelt und erzeugen keinen regulären Profit oder ROI; Background-Ergebnisse bleiben gebatcht, damit nicht jede Antwort neu sortiert.
+
+
+### Neu in 0.5.12
+
+- Die `item.php`-Sortierung wendet nach dem vollständigen Inventory genau einen unveränderlichen Snapshot aus den aktuellen strukturierten Blockdaten an. Persistente Bazaar-Beobachtungen liefern dabei sofort Bazaar-Stück- und Gesamtwert-Keys; eine zusätzliche Preis-Settle-Phase ist für den ersten Snapshot nicht erforderlich.
+- Background-Bazaar-, Best-Sale- und Profit-Aktualisierungen aktualisieren weiterhin Badges und Stores, verändern einen bereits angewandten Sort-Snapshot aber nicht mehr automatisch. Auch das Ende einer Background-Runde löst kein finales Auto-Resort aus.
+- Veränderte aktive Sort-Keys markieren die Reihenfolge als **„Preise aktualisiert“**. Der neue kompakte **„Neu sortieren“**-Button sowie Änderungen von Kriterium oder Richtung wenden genau einmal einen frischen Snapshot aus den bereits aufgelösten Records an und lösen keine Preisabfrage aus.
+- Verified Best Sale, Profit/ROI, Missing-last, Originalreihenfolge und logische Gruppen bleiben fachlich unverändert.
