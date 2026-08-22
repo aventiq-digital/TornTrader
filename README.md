@@ -403,3 +403,9 @@ On `item.php`, the helper parses only semantic Torn row attributes and item imag
 - Removed repeated Bazaar and Trader totals from the normal row display while retaining exact winning unit and total values in Best Sale and detailed verification context in tooltips.
 - Grouped Bazaar, Trade, and History into one consistent action area; unavailable values now use muted semantic states, while verified and positive/negative values retain restrained, meaningful accents.
 - Simplified the inventory sort toolbar styling without changing frozen snapshots, dirty state, manual Re-sort, grouping, stores, pricing, tracking, or transaction semantics.
+
+### New in 0.5.19
+
+- Faction Armoury loans are identified per concrete Torn inventory row through the semantic return-to-armoury action and excluded before owned logical blocks are built.
+- Loaned instances no longer contribute to owned quantity, cost-basis coverage, Bazaar/Trader valuation, Best Sale, profit, sell controls, price requests, sale filtering, or sale-oriented sorting.
+- Mixed ownership remains instance-safe: a personally owned item and a faction-loaned item with the same item ID remain distinct, while the shared item-level Bazaar sell rule is preserved unchanged and applies only to owned stock.
