@@ -378,3 +378,9 @@ On `item.php`, the helper parses only semantic Torn row attributes and item imag
 - Der Bazaar-Verkaufsfilter ordnet Inventory-Rows nun über bereits vorhandene `data-rowkey`-Referenzen zu. Der irrtümlich vorausgesetzte, aber nie definierte `cssEscape`-Global entfällt; der produktive `item.php`-Refresh erreicht damit wieder Sort-Control, Verkaufsfilter und die Item-gebundenen Weav3r-Links.
 - Weav3r-SPA-Routenwechsel invalidieren den sichtbaren item-spezifischen Arbitrage-/Trader-State synchron und zeigen sofort einen an Item-ID und Route-Generation gebundenen Loading-Zustand. Alte Timer, Collector-Ergebnisse und Render-Aufrufe dürfen die neue Route weder persistierend noch sichtbar überschreiben.
 - Bazaar- und Trade-Links werden auf `item.php` pro logischem Inventory-Block aus dessen eigener Item-ID erzeugt. Bewertungs-, Sell-Rule- und Snapshot-Sortiersemantik bleiben unverändert.
+
+### Neu in 0.5.15
+
+- Der SPA-Route-Lifecycle verwendet für Source-Table-Header nun den bereits vorhandenen zentralen `normalizeHeaderText`-Helper; der irrtümlich angenommene, nicht definierte `normalizeText`-Name entfällt.
+- Beim Item-Wechsel wird die sichtbare itemgebundene UI vor der optionalen Source-Table-Snapshot-Analyse neutralisiert. Schlägt der sekundäre Snapshot in einem unvollständigen DOM fehl, bleibt die Route konservativ im Loading-Zustand statt mit Trader-Daten der vorherigen Route stehen zu bleiben.
+- VM-Integrationstests führen den echten A→B→C-Transition-Pfad mit Source-Tabellen aus. Ein zusätzlicher statischer Call-Scope-Scan prüft die neueren Route-, Inventory-, Sort-, Filter- und Quote-Funktionen auf nicht definierte Helper-Aufrufe.
