@@ -390,3 +390,9 @@ On `item.php`, the helper parses only semantic Torn row attributes and item imag
 - Der Weav3r-Routenwechsel behandelt den alten Source-Table-Snapshot nur noch als negativen Schutz für sichtbares DOM. Sicher an aktuelle Item-ID und Route-Generation gebundene Collector- oder Cache-Ergebnisse dürfen das Panel unabhängig davon aus dem Loading-Zustand lösen.
 - In-place wiederverwendete Source-Tabellen werden anhand normalisierter Header, Row-Anzahl und relevanter Zeileninhalte erkannt. Reine Class-/Style-Änderungen geben stale DOM nicht frei; semantisch geänderte Inhalte dagegen schon.
 - Die komplette WAH-Inventory-Ausgabe liegt pro logischem Block in einer eigenen, umbrechenden `.wah-item-row` zwischen Torns `.title-wrap` und `.cont-wrap`. Torn- und TornTools-Titel beziehungsweise Preise bleiben dadurch von History, Bewertungen, Links und Verkaufsmenge getrennt.
+
+### New in 0.5.17
+
+- All user-facing userscript controls, badges, status messages, tooltips, Bazaar Sell Manager copy, and inventory valuation text are now consistently English. Stable storage keys, schemas, and rule enum values remain unchanged.
+- Every logical `item.php` inventory block now exposes the same **Sell all / Keep one / Don't sell** rule used by the Bazaar Sell Manager. Both surfaces persist through the single existing Bazaar sell-rule store and react to cross-tab changes.
+- Sell-rule changes update the structured sellable quantity, **To Bazaar** indicator, sell-only filter, and quantity snapshot locally without initiating price requests or restoring background auto-sorting.
