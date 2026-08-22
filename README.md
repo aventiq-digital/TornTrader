@@ -440,3 +440,11 @@ On `item.php`, the helper parses only semantic Torn row attributes and item imag
 - Bazaar Manage **Remove all** now prepares safely parsed native removal fields on its single explicit click; Torn's **SAVE CHANGES** remains the required manual final action.
 - Trade target identity now scans the authoritative All inventory list regardless of WAH visibility or native availability, clears stale filter presentation before a new scan, and preserves target-found state independently from completeness.
 - No verified valuation, transaction, ownership, persistence, or automatic final-action semantics changed.
+
+### New in 0.5.24
+
+- Added an authoritative fresh Trade target rescan after full inventory loading.
+- Final target resolution now uses the current fully rendered All-items DOM instead of pre-load row state, including when React replaces the inventory root or individual rows.
+- Added bounded post-load DOM settling for final React inventory commits.
+- **Use All** and target filtering now derive from the complete fresh target-row set and are applied only after final resolution.
+- Existing Trade completeness, transaction, pricing, ownership, Bazaar, and sorting semantics remain unchanged.

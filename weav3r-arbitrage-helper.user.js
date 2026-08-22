@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Weav3r Arbitrage Helper
 // @namespace    local.queenjuliette.weav3r
-// @version      0.5.23
+// @version      0.5.24
 // @description  Compares Weav3r purchase prices with trusted trader buy prices.
 // @match        https://weav3r.dev/item/*
 // @match        https://weav3r.dev/pricelist/*
@@ -89,6 +89,8 @@
   const TRADE_TARGET_DISCOVERY_TIMEOUT_MS = 12000;
   const TRADE_TARGET_DISCOVERY_MAX_STEPS = 30;
   const TRADE_TARGET_DISCOVERY_SETTLE_MS = 250;
+  const TRADE_FINAL_SETTLE_CHECK_MS = 100;
+  const TRADE_FINAL_SETTLE_TIMEOUT_MS = 800;
   const OFFER_CLICK_FRESHNESS_MS = 15 * 1000;
   const TORN_HANDOFF_STATUS_ID = 'weav3r-arbitrage-torn-status';
   const TORN_HANDOFF_STYLE_ID = 'weav3r-arbitrage-torn-style';
@@ -1301,10 +1303,15 @@
   function normalizedItemText(text) { return String(text || '').replace(/\s+/g, ' ').trim().toLowerCase(); }
   function extractTornItemIdFromImageSource(source) { const match = String(source || '').match(/\/images\/items\/(\d+)\//); return match ? normalizePositiveInt(match[1]) : null; }
   function getInventoryContainer() { return document.querySelector('#inventory-container'); }
+  function resolveCurrentTradeAllItemsRoot() {
+    const inventory = getInventoryContainer();
+    if (!inventory) return null;
+    return inventory.querySelector('.items-cont.all-items') || inventory;
+  }
   function collectTradeInventoryRows(inventory) {
     if (!inventory) return [];
-    const authoritative = inventory.querySelector('.items-cont.all-items');
-    return Array.from((authoritative || inventory).querySelectorAll(authoritative ? ':scope > li[data-group]' : '.items-cont > li[data-group]'));
+    const authoritative = inventory.matches?.('.items-cont.all-items') ? inventory : inventory.querySelector('.items-cont.all-items');
+    return Array.from((authoritative || inventory).querySelectorAll(authoritative ? ':scope > li[data-group]' : '.items-cont > li[data-group]')).filter((row) => row.isConnected !== false);
   }
   function getInventoryRows() { return collectTradeInventoryRows(getInventoryContainer()); }
   function getInventoryRowItemIds(row) {
@@ -1327,6 +1334,38 @@
       if (rowName && normalizedItemText(rowName) !== expectedName) { logDebug('Target Item ID row had mismatched name.', { rowName, expected: handoff.itemName }); return false; }
       return true;
     });
+  }
+  function resolveFinalTradeTargetState(options) {
+    const { root, targetItemId, targetItemName = '' } = options || {};
+    const normalizedTargetId = normalizePositiveInt(targetItemId);
+    const expectedName = normalizedItemText(targetItemName);
+    const rows = collectTradeInventoryRows(root).filter((row) => row.isConnected !== false);
+    const targetRows = rows.filter((row) => {
+      const identity = parseTradeRowIdentity(row);
+      if (!identity.itemIds.includes(normalizedTargetId)) return false;
+      return !identity.itemName || !expectedName || normalizedItemText(identity.itemName) === expectedName;
+    });
+    const resolvedRows = targetRows.map((row) => ({ row, actionability: resolveTradeRowActionability(row) }));
+    const actionableRows = resolvedRows.filter((entry) => entry.actionability.status === 'available');
+    return { root, rows, targetFound: targetRows.length > 0, targetRows, actionableRows, unavailableRows: resolvedRows.filter((entry) => entry.actionability.status === 'unavailable').map((entry) => entry.row), untradableRows: resolvedRows.filter((entry) => entry.actionability.status === 'untradable').map((entry) => entry.row), totalActionableQuantity: actionableRows.reduce((sum, entry) => sum + entry.actionability.control.available, 0) };
+  }
+  function getTradeFinalSettleSignature(root) {
+    const rows = collectTradeInventoryRows(root);
+    const last = rows.at(-1); const identity = last ? parseTradeRowIdentity(last) : null;
+    return `${rows.length}:${identity?.itemIds?.join(',') || ''}:${identity?.itemName || ''}`;
+  }
+  async function waitForFinalTradeDomSettle(options) {
+    const { signal, isContextCurrent = () => true } = options || {};
+    const deadline = Date.now() + TRADE_FINAL_SETTLE_TIMEOUT_MS;
+    let previous = ''; let stableChecks = 0;
+    while (Date.now() < deadline && !signal?.aborted) {
+      if (!isContextCurrent()) return false;
+      const root = resolveCurrentTradeAllItemsRoot();
+      if (!root || root.isConnected === false) { stableChecks = 0; previous = ''; }
+      else { const signature = getTradeFinalSettleSignature(root); stableChecks = signature === previous ? stableChecks + 1 : 0; previous = signature; if (stableChecks >= 2) return true; }
+      await new Promise((resolve) => setTimeout(resolve, TRADE_FINAL_SETTLE_CHECK_MS));
+    }
+    return !signal?.aborted && isContextCurrent();
   }
   function getTradeIdFromBackLink() { const link = document.querySelector('a.back-to[href*="trade.php#step=view"][href*="ID="]'); if (!link) return null; try { return parseTradeHash(new URL(link.getAttribute('href'), location.href).hash).tradeId; } catch (_) { const hash = String(link.getAttribute('href') || '').split('#')[1] || ''; return parseTradeHash(`#${hash}`).tradeId; } }
   function getTradeFilterMode(handoff) { return handoff?.progress?.itemFilterMode === 'all' ? 'all' : 'target-only'; }
@@ -1455,10 +1494,11 @@
       }
     }
   }
-  function applyTradeItemFilter(handoff, scrollTarget = false) {
+  function applyTradeItemFilter(handoff, scrollTarget = false, finalState = null) {
     const latest = readTradeHandoff() || handoff;
-    const rows = getInventoryRows();
-    const targets = getVerifiedTargetRows(latest);
+    const resolved = finalState || resolveFinalTradeTargetState({ root: getInventoryContainer(), targetItemId: latest.itemId, targetItemName: latest.itemName });
+    const rows = resolved.rows;
+    const targets = resolved.targetRows;
     const mode = getTradeFilterMode(latest);
     if (!targets.length) {
       rows.forEach((row) => row.classList.remove(TRADE_FILTER_HIDDEN_CLASS, TRADE_FILTER_TARGET_CLASS));
@@ -1697,15 +1737,25 @@
       const initialTargets = getVerifiedTargetRows(latest); renderTradeFilterPanel(latest, initialTargets.length, getTradeFilterMode(latest), false, true);
       const discovery = await findTradeTargetWithProgressiveScroll({ inventory: discoveryRoot, targetItemId: latest.itemId, signal: controller.signal, isContextCurrent: () => tornState.inventoryDiscoveryController === controller && discoveryRoot?.isConnected !== false && parseTradeHash().step === 'add' && parseTradeHash().tradeId === latestRoute.tradeId && readTradeHandoff()?.handoffId === latest.handoffId, onProgress: (progress) => { if (tornState.inventoryDiscoveryController === controller) renderTradeFilterPanel(latest, progress.targets.length, getTradeFilterMode(latest), false, true); } });
       if (controller.signal.aborted || tornState.inventoryDiscoveryController !== controller) return;
-      tornState.inventoryDiscoveryController = null;
       const currentRoute = parseTradeHash();
       const currentHandoff = readTradeHandoff();
       if (!currentHandoff || currentHandoff.handoffId !== latest.handoffId || currentRoute.step !== 'add' || currentRoute.tradeId !== latestRoute.tradeId) return;
       logDebug('Trade full inventory discovery finished.', { status: discovery.status, targets: discovery.targets.length, rows: collectTradeInventoryRows(getInventoryContainer()).length });
-      if (discovery.status !== 'complete') { getInventoryRows().forEach((row) => row.classList.remove(TRADE_FILTER_HIDDEN_CLASS, TRADE_FILTER_TARGET_CLASS)); renderTradeFilterPanel(latest, discovery.targets.length, 'all', false, false, true); showTornStatus(discovery.targets.length ? `Weav3r: ${latest.itemName} found; full inventory loading incomplete.` : 'Weav3r: Inventory loading incomplete; target presence was not classified.'); return; }
-      if (discovery.targets.length) { latest.progress.itemFilterMode = 'target-only'; writeTradeHandoff(latest); }
+      const isFinalContextCurrent = () => tornState.inventoryDiscoveryController === controller && !controller.signal.aborted && parseTradeHash().step === 'add' && parseTradeHash().tradeId === latestRoute.tradeId && readTradeHandoff()?.handoffId === latest.handoffId && normalizePositiveInt(readTradeHandoff()?.itemId) === normalizePositiveInt(latest.itemId);
+      if (discovery.status === 'complete') {
+        logDebug('trade-final-rescan-start', { targetItemId: latest.itemId, inventoryStatus: discovery.status });
+        if (!isFinalContextCurrent() || !await waitForFinalTradeDomSettle({ signal: controller.signal, isContextCurrent: isFinalContextCurrent })) { logDebug('trade-final-rescan-aborted', { targetItemId: latest.itemId, inventoryStatus: discovery.status }); return; }
+      }
+      if (!isFinalContextCurrent()) { logDebug('trade-final-rescan-aborted', { targetItemId: latest.itemId, inventoryStatus: discovery.status }); return; }
+      const finalRoot = resolveCurrentTradeAllItemsRoot();
+      if (!finalRoot || finalRoot.isConnected === false) { logDebug('trade-final-rescan-aborted', { targetItemId: latest.itemId, inventoryStatus: discovery.status, reason: 'root-unavailable' }); return; }
+      const finalState = resolveFinalTradeTargetState({ root: finalRoot, targetItemId: latest.itemId, targetItemName: latest.itemName });
+      logDebug('trade-final-rescan-complete', { targetItemId: latest.itemId, inventoryStatus: discovery.status, rowCount: finalState.rows.length, targetCount: finalState.targetRows.length });
+      tornState.inventoryDiscoveryController = null;
+      if (discovery.status !== 'complete') { finalState.rows.forEach((row) => row.classList.remove(TRADE_FILTER_HIDDEN_CLASS, TRADE_FILTER_TARGET_CLASS)); renderTradeFilterPanel(latest, finalState.targetRows.length, 'all', false, false, true); showTornStatus(finalState.targetFound ? `Weav3r: ${latest.itemName} found; full inventory loading incomplete.` : 'Weav3r: Inventory loading incomplete; target presence was not classified.'); return; }
+      if (finalState.targetFound && !latest.progress.itemFilterMode) { latest.progress.itemFilterMode = 'target-only'; writeTradeHandoff(latest); }
       setupInventoryObserver(latest, latestRoute);
-      applyTradeItemFilter(latest, !latest.progress.itemFilterAppliedAt);
+      applyTradeItemFilter(latest, !latest.progress.itemFilterAppliedAt, finalState);
     }, 20000);
   }
   function processTornTradeHandoff() {
