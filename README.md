@@ -384,3 +384,9 @@ On `item.php`, the helper parses only semantic Torn row attributes and item imag
 - Der SPA-Route-Lifecycle verwendet für Source-Table-Header nun den bereits vorhandenen zentralen `normalizeHeaderText`-Helper; der irrtümlich angenommene, nicht definierte `normalizeText`-Name entfällt.
 - Beim Item-Wechsel wird die sichtbare itemgebundene UI vor der optionalen Source-Table-Snapshot-Analyse neutralisiert. Schlägt der sekundäre Snapshot in einem unvollständigen DOM fehl, bleibt die Route konservativ im Loading-Zustand statt mit Trader-Daten der vorherigen Route stehen zu bleiben.
 - VM-Integrationstests führen den echten A→B→C-Transition-Pfad mit Source-Tabellen aus. Ein zusätzlicher statischer Call-Scope-Scan prüft die neueren Route-, Inventory-, Sort-, Filter- und Quote-Funktionen auf nicht definierte Helper-Aufrufe.
+
+### Neu in 0.5.16
+
+- Der Weav3r-Routenwechsel behandelt den alten Source-Table-Snapshot nur noch als negativen Schutz für sichtbares DOM. Sicher an aktuelle Item-ID und Route-Generation gebundene Collector- oder Cache-Ergebnisse dürfen das Panel unabhängig davon aus dem Loading-Zustand lösen.
+- In-place wiederverwendete Source-Tabellen werden anhand normalisierter Header, Row-Anzahl und relevanter Zeileninhalte erkannt. Reine Class-/Style-Änderungen geben stale DOM nicht frei; semantisch geänderte Inhalte dagegen schon.
+- Die komplette WAH-Inventory-Ausgabe liegt pro logischem Block in einer eigenen, umbrechenden `.wah-item-row` zwischen Torns `.title-wrap` und `.cont-wrap`. Torn- und TornTools-Titel beziehungsweise Preise bleiben dadurch von History, Bewertungen, Links und Verkaufsmenge getrennt.
