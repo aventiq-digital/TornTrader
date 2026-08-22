@@ -432,3 +432,11 @@ On `item.php`, the helper parses only semantic Torn row attributes and item imag
 - Repaired Trade Item-Add discovery for legacy document-scrolled inventory, preserving target-found state while loading remaining rows and distinguishing partial discovery from proven completion.
 - Repaired Bazaar Manage route activation, semantic panel selection, delayed React mounting, panel replacement, and route-independent initialization with debug lifecycle events.
 - Transaction confirmation, pricing eligibility, quote schemas, ownership, sell rules, and automatic final-action semantics are unchanged.
+
+### New in 0.5.23
+
+- Best Sale sorting now uses a separate sort-only fallback from safe stored Bazaar and existing safely displayable stored Trader candidates when verified Best Sale is unavailable.
+- Stored Bazaar values remain sortable regardless of age, while verified Best Sale, Profit, ROI, and market-delta semantics remain unchanged.
+- Bazaar Manage **Remove all** now prepares safely parsed native removal fields on its single explicit click; Torn's **SAVE CHANGES** remains the required manual final action.
+- Trade target identity now scans the authoritative All inventory list regardless of WAH visibility or native availability, clears stale filter presentation before a new scan, and preserves target-found state independently from completeness.
+- No verified valuation, transaction, ownership, persistence, or automatic final-action semantics changed.
