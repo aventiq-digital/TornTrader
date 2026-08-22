@@ -424,3 +424,11 @@ On `item.php`, the helper parses only semantic Torn row attributes and item imag
 - Added explicit per-row and bulk **Fill prices** helpers plus a confirmed **Remove all** field-preparation helper. These only update native fields and never click or submit Torn's **SAVE CHANGES** action.
 - Trade Item-Add now continues bounded full-inventory discovery after finding the first target, requires repeated stable-end evidence, restores scroll position, and distinguishes complete not-found from incomplete loading.
 - No transaction confirmation, quote persistence, ownership, automatic final-action, or snapshot sorting semantics changed.
+
+### New in 0.5.22
+
+- Safely stored Bazaar quotes remain available to inventory sorting regardless of age; freshness continues to control only current/verified presentation and valuation semantics.
+- Added an explicit **Refresh Bazaar** inventory action with deduplicated queued requests, progress reporting, stored-value retention on failure, and frozen-sort dirty signaling without automatic reordering.
+- Repaired Trade Item-Add discovery for legacy document-scrolled inventory, preserving target-found state while loading remaining rows and distinguishing partial discovery from proven completion.
+- Repaired Bazaar Manage route activation, semantic panel selection, delayed React mounting, panel replacement, and route-independent initialization with debug lifecycle events.
+- Transaction confirmation, pricing eligibility, quote schemas, ownership, sell rules, and automatic final-action semantics are unchanged.
