@@ -372,3 +372,9 @@ On `item.php`, the helper parses only semantic Torn row attributes and item imag
 - Weav3r bindet sichtbare Trader-Tabellen an Item-ID **und** Route-Generation. Bei schnellen SPA-Wechseln bleibt die alte Tabelle gesperrt, bis der neue Item-DOM übernommen wurde; veraltete Auswertungen und Antworten können den aktuellen Item-State nicht überschreiben. Legacy-Trader-Caches ohne explizite Item-Bindung werden vorsorglich nicht wiederverwendet.
 - `item.php` bietet den kombinierbaren Filter **„Nur Bazaar-Verkauf“**. Er verwendet direkt die vorhandenen Bazaar-Add-Regeln (`alle verkaufen`, `1 behalten`, `nicht verkaufen`), blendet Verkaufsmenge 0 blockweise aus und zeigt die geplante Verkaufsmenge statt sie aus dem Gesamtbestand neu zu erfinden.
 - Die Weav3r-Itemkarte verlinkt **Bazaar** und **Trade** direkt mit der aktuellen stabilen Item-ID. Beide Ziel-URLs initialisieren die passende Item-Ansicht ohne vorherigen Listenbesuch.
+
+### Neu in 0.5.14
+
+- Der Bazaar-Verkaufsfilter ordnet Inventory-Rows nun über bereits vorhandene `data-rowkey`-Referenzen zu. Der irrtümlich vorausgesetzte, aber nie definierte `cssEscape`-Global entfällt; der produktive `item.php`-Refresh erreicht damit wieder Sort-Control, Verkaufsfilter und die Item-gebundenen Weav3r-Links.
+- Weav3r-SPA-Routenwechsel invalidieren den sichtbaren item-spezifischen Arbitrage-/Trader-State synchron und zeigen sofort einen an Item-ID und Route-Generation gebundenen Loading-Zustand. Alte Timer, Collector-Ergebnisse und Render-Aufrufe dürfen die neue Route weder persistierend noch sichtbar überschreiben.
+- Bazaar- und Trade-Links werden auf `item.php` pro logischem Inventory-Block aus dessen eigener Item-ID erzeugt. Bewertungs-, Sell-Rule- und Snapshot-Sortiersemantik bleiben unverändert.
