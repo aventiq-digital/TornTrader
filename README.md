@@ -416,3 +416,11 @@ On `item.php`, the helper parses only semantic Torn row attributes and item imag
 - Combined the shared rule selector and sellable quantity into a compact **Sell** control, with zero sellable quantity shown as a muted neutral state.
 - Added an exact, presentation-only Bazaar-versus-Trader advantage to Best Sale when both candidates are currently verified; stored and unverified quotes remain excluded.
 - Pricing, ownership, transaction, persistence, and frozen snapshot sorting semantics are unchanged.
+
+### New in 0.5.21
+
+- Bazaar Add now reuses the compact selling-decision presentation for Best Sale, Bazaar/Trader comparison, verified delta, meaningful basis/profit context, and direct actions while preserving native quantity and price controls.
+- Bazaar Manage now parses virtualized rows from semantic test IDs, image item IDs, cross-checked names, and terminal heading quantities; it displays current listing price separately from WAH recommendations.
+- Added explicit per-row and bulk **Fill prices** helpers plus a confirmed **Remove all** field-preparation helper. These only update native fields and never click or submit Torn's **SAVE CHANGES** action.
+- Trade Item-Add now continues bounded full-inventory discovery after finding the first target, requires repeated stable-end evidence, restores scroll position, and distinguishes complete not-found from incomplete loading.
+- No transaction confirmation, quote persistence, ownership, automatic final-action, or snapshot sorting semantics changed.
