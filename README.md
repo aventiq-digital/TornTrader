@@ -301,3 +301,142 @@ On `item.php`, the helper parses only semantic Torn row attributes and item imag
 - Sicher beobachtete, konkrete Trader-Buy-Preise aus der bestehenden Weav3r-Trader-Tabelle werden dauerhaft mit Item-, Trader- und Condition-Identität gespeichert. Gleiche Beobachtungen erhöhen Zähler und `lastSeenAt`; Preis- oder Condition-Änderungen bleiben als getrennte Historie erhalten.
 - Trader-Quotes besitzen keinen TTL-Verfall. `item.php` bevorzugt junge Quotes aktuell eligible Trader, zeigt bei fehlender aktueller Verifizierbarkeit aber weiterhin den jüngsten gespeicherten Preis mit sichtbarem Alter und entsprechend vorsichtigem Status.
 - Weav3r bleibt ausschließlich die aktualisierende Quelle: Ist die Seite nicht erreichbar, werden keine Daten erfunden oder gelöscht. Cost Basis, Bazaar und Trader bleiben getrennte Bewertungen; Best Sale, Profit und ROI folgen später.
+
+
+### Neu in 0.5.4
+
+- `item.php` zeigt pro logischem Inventory-Block zusätzlich **Best Sale**: Der reine Resolver vergleicht ausschließlich die sichere Bazaar-Preisempfehlung mit aktuell eligible Trader-Quotes und bevorzugt bei Gleichstand Bazaar.
+- Nicht verifizierte gespeicherte Trader-Quotes schlagen keinen sicheren Bazaar-Wert. Nur wenn kein aktuell verifizierter Verkaufsweg existiert, erscheinen sie ausdrücklich als historischer, unverified Fallback.
+- Stück- und Bruttogesamtwerte bleiben BigInt-basiert. Cost Basis, Bazaar und Trader bleiben separat sichtbar; Profit, ROI und Verkaufsausführung sind nicht Bestandteil dieser Version.
+
+
+### Neu in 0.5.5
+
+- `item.php` zeigt pro logischem Inventory-Block einen potentiellen Bruttogewinn und ROI ausschließlich für kostenmäßig sicher abgedeckte Einheiten und einen aktuell verifizierten Best-Sale-Kanal.
+- Die aktuelle Restbestandsbasis verwendet bei vollständig bekannten bestätigten Inbounds eine BigInt-rationale WAC-Rechnung. Historische Gesamtkosten werden nach Outbounds nicht als Restbasis missverstanden; unbekannte oder widersprüchliche Zuordnungen bleiben nicht verfügbar.
+- Partielle Coverage weist die einbezogene Menge sichtbar aus. Gespeicherte, aktuell unverified Trader-Quotes, unbekannte Bestandsanteile und Verkaufsgebühren fließen nicht in Profit oder ROI ein.
+
+
+### Neu in 0.5.6
+
+- Manuell geöffnete `weav3r.dev/item/<ID>`-Seiten persistieren sicher erkannte Trader-Tabellen nun über denselben Parser und Quote-Store wie der Hidden-Iframe-Collector. Initial Scan, asynchrones Rendering und SPA-Routenwechsel werden ohne Polling unterstützt.
+- Der bestehende Quote-Key dedupliziert unveränderte Tabellenbeobachtungen im selben History-Record und erhöht deren Beobachtungszähler; Preisänderungen erzeugen weiterhin neue historische Records. Der bestehende `item.php`-Storage-Listener aktualisiert Trader, Best Sale und Profit tabübergreifend ohne Reload.
+
+
+### Neu in 0.5.7
+
+- `item.php` kann die aktuell dargestellten logischen Inventory-Blöcke nach Name, Menge sowie den bereits aufgelösten Basis-, Bazaar-, Trader-, Best-Sale-, Profit- und ROI-Werten sortieren. Fehlende Bewertungswerte bleiben in beiden Richtungen am Ende.
+- Offene Gruppen werden ausschließlich als zusammenhängender Block verschoben; ihre Child-Reihenfolge bleibt erhalten. Containerbezogene stabile Block-Identitäten bewahren die ursprüngliche Torn-Reihenfolge auch über Group-Toggles, Search, Load More und asynchrone Refreshes.
+- Sortierkriterium und Richtung werden separat persistent gespeichert. Exakte BigInt-/Ratio-Vergleiche nutzen ausschließlich die im bestehenden Inventory-Refresh bereits berechneten Strukturen und lösen keine zusätzlichen Store-Lesevorgänge oder Requests aus.
+
+
+### Neu in 0.5.8
+
+- Der Trader-Parser crosscheckt Trader-IDs nun über Profile-, Trade-Now- und Pricelist-Links in Trader- **und** Actions-Zelle. Dadurch werden reale Tabellen wie die Xanax-Seite auch dann sicher persistiert, wenn die ID-tragenden Links außerhalb der Trader-Zelle gerendert sind. Strukturierte DEBUG-Ereignisse verfolgen Route, Tabelle, Row-Rejections, Normalisierung, Store-Write, Eligibility und item.php-Auflösung.
+- Die item.php-Sortierung sammelt relevante Sort-Key-Änderungen in einer Quiet-Period und erzwingt spätestens nach einer begrenzten Batch-Zeit eine Anwendung. Unveränderte aktive Keys lösen keine Sortierung aus; Benutzeränderungen und statische Kriterien reagieren unmittelbar.
+- Eigene Blockverschiebungen werden vom Inventory-Observer erkannt und unterdrückt. Async Bazaar-, Trader-, Best-Sale- und Profit-Updates führen damit zu wenigen stabilen Batch-Sorts statt zu einem Reorder pro Einzelergebnis.
+
+
+### Neu in 0.5.9
+
+- Auf `item.php` lädt WAH Torns zunächst lazy dargestelltes eigenes Inventory über das vorhandene `#load-more-items`-Control und Torns normalen delegierten jQuery-Clickweg vollständig nach. Es werden weder private Torn-Funktionen noch eigene Inventory-Endpunkte oder künstliches Scrollen verwendet.
+- Der Full-Load-Coordinator wartet nach jedem Trigger auf echten Fortschritt bei `data-from`, Row-Anzahl oder `data-all`, erkennt aktive Containerwechsel und bricht bei fehlendem Fortschritt, fehlendem Control oder fehlendem jQuery begrenzt ab. Im Fehlerfall bleibt das vorhandene Teil-Inventar normal nutzbar.
+- Während des Full Loads bleibt die Reihenfolge stabil. Danach warten Bazaar-abhängige Sortierungen auf die bereits gestartete deduplizierte Bewertungsrunde und wenden einen aktuellen Snapshot statt einzelner Zwischenstände an; lokale und statische Kriterien warten nicht unnötig auf Bazaar.
+- Pricing-, Trader-, Cost-Basis-, Best-Sale-, Profit- und ROI-Semantik bleiben unverändert.
+
+
+### Neu in 0.5.10
+
+- Der `item.php`-Full-Load-Coordinator behandelt noch fehlende `data-all`-, `data-from`- und `data-queue`-Attribute sowie verspätetes Load-More-Control oder jQuery als begrenzten, wiederaufnehmbaren Startup-Zustand. Readiness-Wiederholungen verbrauchen keine echten Load-Versuche; nur ausbleibender Fortschritt kann terminal abbrechen.
+- Bazaar-abhängige Sortierungen erhalten nach dem vollständigen Inventory bereits nach einer kurzen Settle-Phase einen ersten Snapshot mit Missing-last, statt auf sämtliche Detailpreise zu warten. Weitere Ergebnisse werden in größeren Ergebnis- beziehungsweise Quiet-Period-Batches und abschließend nach Rundenende aktualisiert.
+- Einzelne Bazaar-Ergebnisse starten nicht länger jeweils einen vollständigen Inventory-Refresh. Der vorhandene Cache-, Queue- und Request-Deduplizierungspfad bleibt unverändert; lokale Kriterien wie Name, Menge, Basis und Trader warten weiterhin nicht auf Bazaar.
+
+
+### Neu in 0.5.11
+
+- Der Full-Inventory-Loader greift über Tampermonkeys `unsafeWindow` auf Torns tatsächlich registriertes Seiten-jQuery zu. Ein bereits ladebereiter Live-Container triggert unmittelbar; der Load-More-Button wird vor jedem Trigger frisch aufgelöst und auf verbundenen, aktiven Zustand geprüft. Private Torn-Inventory-APIs oder Scroll-Automation werden weiterhin nicht verwendet.
+- Sichere, anomaly-freie Marketplace-Detail-Beobachtungen werden kompakt und ohne TTL pro Item unter `WEAV3R_ARBITRAGE_BAZAAR_QUOTES_V1` gespeichert. Gleiche Preise aktualisieren `lastSeenAt` und den Beobachtungszähler; Preisänderungen ersetzen die letzte sichere Beobachtung.
+- Bazaar-Sortierungen können sofort die gespeicherte Marktbeobachtung verwenden und wenden die aktuelle Bazaar-Anpassung jedes Mal neu über die bestehende Pricing Engine an. Fehlende Werte bleiben am Ende; Live-Abfragen laufen priorisiert und mit unveränderter Queue/Concurrency im Hintergrund.
+- Gespeicherte Bazaar-Werte sind ausdrücklich nur Sortier- und Fallback-Anzeigen. Sie werden nicht als aktuell verifizierter Best Sale behandelt und erzeugen keinen regulären Profit oder ROI; Background-Ergebnisse bleiben gebatcht, damit nicht jede Antwort neu sortiert.
+
+
+### Neu in 0.5.12
+
+- Die `item.php`-Sortierung wendet nach dem vollständigen Inventory genau einen unveränderlichen Snapshot aus den aktuellen strukturierten Blockdaten an. Persistente Bazaar-Beobachtungen liefern dabei sofort Bazaar-Stück- und Gesamtwert-Keys; eine zusätzliche Preis-Settle-Phase ist für den ersten Snapshot nicht erforderlich.
+- Background-Bazaar-, Best-Sale- und Profit-Aktualisierungen aktualisieren weiterhin Badges und Stores, verändern einen bereits angewandten Sort-Snapshot aber nicht mehr automatisch. Auch das Ende einer Background-Runde löst kein finales Auto-Resort aus.
+- Veränderte aktive Sort-Keys markieren die Reihenfolge als **„Preise aktualisiert“**. Der neue kompakte **„Neu sortieren“**-Button sowie Änderungen von Kriterium oder Richtung wenden genau einmal einen frischen Snapshot aus den bereits aufgelösten Records an und lösen keine Preisabfrage aus.
+- Verified Best Sale, Profit/ROI, Missing-last, Originalreihenfolge und logische Gruppen bleiben fachlich unverändert.
+
+### Neu in 0.5.13
+
+- Weav3r bindet sichtbare Trader-Tabellen an Item-ID **und** Route-Generation. Bei schnellen SPA-Wechseln bleibt die alte Tabelle gesperrt, bis der neue Item-DOM übernommen wurde; veraltete Auswertungen und Antworten können den aktuellen Item-State nicht überschreiben. Legacy-Trader-Caches ohne explizite Item-Bindung werden vorsorglich nicht wiederverwendet.
+- `item.php` bietet den kombinierbaren Filter **„Nur Bazaar-Verkauf“**. Er verwendet direkt die vorhandenen Bazaar-Add-Regeln (`alle verkaufen`, `1 behalten`, `nicht verkaufen`), blendet Verkaufsmenge 0 blockweise aus und zeigt die geplante Verkaufsmenge statt sie aus dem Gesamtbestand neu zu erfinden.
+- Die Weav3r-Itemkarte verlinkt **Bazaar** und **Trade** direkt mit der aktuellen stabilen Item-ID. Beide Ziel-URLs initialisieren die passende Item-Ansicht ohne vorherigen Listenbesuch.
+
+### Neu in 0.5.14
+
+- Der Bazaar-Verkaufsfilter ordnet Inventory-Rows nun über bereits vorhandene `data-rowkey`-Referenzen zu. Der irrtümlich vorausgesetzte, aber nie definierte `cssEscape`-Global entfällt; der produktive `item.php`-Refresh erreicht damit wieder Sort-Control, Verkaufsfilter und die Item-gebundenen Weav3r-Links.
+- Weav3r-SPA-Routenwechsel invalidieren den sichtbaren item-spezifischen Arbitrage-/Trader-State synchron und zeigen sofort einen an Item-ID und Route-Generation gebundenen Loading-Zustand. Alte Timer, Collector-Ergebnisse und Render-Aufrufe dürfen die neue Route weder persistierend noch sichtbar überschreiben.
+- Bazaar- und Trade-Links werden auf `item.php` pro logischem Inventory-Block aus dessen eigener Item-ID erzeugt. Bewertungs-, Sell-Rule- und Snapshot-Sortiersemantik bleiben unverändert.
+
+### Neu in 0.5.15
+
+- Der SPA-Route-Lifecycle verwendet für Source-Table-Header nun den bereits vorhandenen zentralen `normalizeHeaderText`-Helper; der irrtümlich angenommene, nicht definierte `normalizeText`-Name entfällt.
+- Beim Item-Wechsel wird die sichtbare itemgebundene UI vor der optionalen Source-Table-Snapshot-Analyse neutralisiert. Schlägt der sekundäre Snapshot in einem unvollständigen DOM fehl, bleibt die Route konservativ im Loading-Zustand statt mit Trader-Daten der vorherigen Route stehen zu bleiben.
+- VM-Integrationstests führen den echten A→B→C-Transition-Pfad mit Source-Tabellen aus. Ein zusätzlicher statischer Call-Scope-Scan prüft die neueren Route-, Inventory-, Sort-, Filter- und Quote-Funktionen auf nicht definierte Helper-Aufrufe.
+
+### Neu in 0.5.16
+
+- Der Weav3r-Routenwechsel behandelt den alten Source-Table-Snapshot nur noch als negativen Schutz für sichtbares DOM. Sicher an aktuelle Item-ID und Route-Generation gebundene Collector- oder Cache-Ergebnisse dürfen das Panel unabhängig davon aus dem Loading-Zustand lösen.
+- In-place wiederverwendete Source-Tabellen werden anhand normalisierter Header, Row-Anzahl und relevanter Zeileninhalte erkannt. Reine Class-/Style-Änderungen geben stale DOM nicht frei; semantisch geänderte Inhalte dagegen schon.
+- Die komplette WAH-Inventory-Ausgabe liegt pro logischem Block in einer eigenen, umbrechenden `.wah-item-row` zwischen Torns `.title-wrap` und `.cont-wrap`. Torn- und TornTools-Titel beziehungsweise Preise bleiben dadurch von History, Bewertungen, Links und Verkaufsmenge getrennt.
+
+### New in 0.5.17
+
+- All user-facing userscript controls, badges, status messages, tooltips, Bazaar Sell Manager copy, and inventory valuation text are now consistently English. Stable storage keys, schemas, and rule enum values remain unchanged.
+- Every logical `item.php` inventory block now exposes the same **Sell all / Keep one / Don't sell** rule used by the Bazaar Sell Manager. Both surfaces persist through the single existing Bazaar sell-rule store and react to cross-tab changes.
+- Sell-rule changes update the structured sellable quantity, **To Bazaar** indicator, sell-only filter, and quantity snapshot locally without initiating price requests or restoring background auto-sorting.
+
+### New in 0.5.18
+
+- Redesigned `item.php` inventory presentation as a full-width, responsive WAH information grid: Best Sale is the primary decision value, Bazaar and Trader form a compact comparison, and basis/profit/sell controls are quieter secondary metadata.
+- Removed repeated Bazaar and Trader totals from the normal row display while retaining exact winning unit and total values in Best Sale and detailed verification context in tooltips.
+- Grouped Bazaar, Trade, and History into one consistent action area; unavailable values now use muted semantic states, while verified and positive/negative values retain restrained, meaningful accents.
+- Simplified the inventory sort toolbar styling without changing frozen snapshots, dirty state, manual Re-sort, grouping, stores, pricing, tracking, or transaction semantics.
+
+### New in 0.5.19
+
+- Faction Armoury loans are identified per concrete Torn inventory row through the semantic return-to-armoury action and excluded before owned logical blocks are built.
+- Loaned instances no longer contribute to owned quantity, cost-basis coverage, Bazaar/Trader valuation, Best Sale, profit, sell controls, price requests, sale filtering, or sale-oriented sorting.
+- Mixed ownership remains instance-safe: a personally owned item and a faction-loaned item with the same item ID remain distinct, while the shared item-level Bazaar sell rule is preserved unchanged and applies only to owned stock.
+
+### New in 0.5.20
+
+- Compacted single-item Best Sale output and removed ordinary empty Trader, untracked Basis, and no-basis Profit placeholders from the visible inventory layout.
+- Combined the shared rule selector and sellable quantity into a compact **Sell** control, with zero sellable quantity shown as a muted neutral state.
+- Added an exact, presentation-only Bazaar-versus-Trader advantage to Best Sale when both candidates are currently verified; stored and unverified quotes remain excluded.
+- Pricing, ownership, transaction, persistence, and frozen snapshot sorting semantics are unchanged.
+
+### New in 0.5.21
+
+- Bazaar Add now reuses the compact selling-decision presentation for Best Sale, Bazaar/Trader comparison, verified delta, meaningful basis/profit context, and direct actions while preserving native quantity and price controls.
+- Bazaar Manage now parses virtualized rows from semantic test IDs, image item IDs, cross-checked names, and terminal heading quantities; it displays current listing price separately from WAH recommendations.
+- Added explicit per-row and bulk **Fill prices** helpers plus a confirmed **Remove all** field-preparation helper. These only update native fields and never click or submit Torn's **SAVE CHANGES** action.
+- Trade Item-Add now continues bounded full-inventory discovery after finding the first target, requires repeated stable-end evidence, restores scroll position, and distinguishes complete not-found from incomplete loading.
+- No transaction confirmation, quote persistence, ownership, automatic final-action, or snapshot sorting semantics changed.
+
+### New in 0.5.22
+
+- Safely stored Bazaar quotes remain available to inventory sorting regardless of age; freshness continues to control only current/verified presentation and valuation semantics.
+- Added an explicit **Refresh Bazaar** inventory action with deduplicated queued requests, progress reporting, stored-value retention on failure, and frozen-sort dirty signaling without automatic reordering.
+- Repaired Trade Item-Add discovery for legacy document-scrolled inventory, preserving target-found state while loading remaining rows and distinguishing partial discovery from proven completion.
+- Repaired Bazaar Manage route activation, semantic panel selection, delayed React mounting, panel replacement, and route-independent initialization with debug lifecycle events.
+- Transaction confirmation, pricing eligibility, quote schemas, ownership, sell rules, and automatic final-action semantics are unchanged.
+
+### New in 0.5.23
+
+- Best Sale sorting now uses a separate sort-only fallback from safe stored Bazaar and existing safely displayable stored Trader candidates when verified Best Sale is unavailable.
+- Stored Bazaar values remain sortable regardless of age, while verified Best Sale, Profit, ROI, and market-delta semantics remain unchanged.
+- Bazaar Manage **Remove all** now prepares safely parsed native removal fields on its single explicit click; Torn's **SAVE CHANGES** remains the required manual final action.
+- Trade target identity now scans the authoritative All inventory list regardless of WAH visibility or native availability, clears stale filter presentation before a new scan, and preserves target-found state independently from completeness.
+- No verified valuation, transaction, ownership, persistence, or automatic final-action semantics changed.
