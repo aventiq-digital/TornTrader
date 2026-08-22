@@ -456,3 +456,12 @@ On `item.php`, the helper parses only semantic Torn row attributes and item imag
 - Bazaar Manage now shows exact current-versus-recommended pricing states and a summary explicitly scoped to safely parsed visible virtualized listings.
 - Refresh actions never change Torn quantity, price, removal, selection, sorting, or submission state automatically.
 - Verified Best Sale, Profit, ROI, sorting, transactions, ownership, Trade discovery, and final Torn action semantics remain unchanged.
+
+### New in 0.5.26
+
+- Added a route-local Bazaar Manage listing registry that retains safely observed plain-data listing snapshots across Torn virtualization and row recycling.
+- Manage repricing summaries and Bazaar refresh now use every safely observed listing, while coverage explicitly distinguishes unknown, partial, and semantically proven complete observation.
+- A semantic `aria-rowcount` is used only when Torn exposes it as an expected-count target; without it, Manage reports observed coverage and never claims completeness.
+- Native **Fill prices** and **Remove all** remain limited to currently mounted, connected, safely writable fields.
+- No private listing endpoints, React-internal dependencies, automatic virtualization scrolling, or final Torn actions were added.
+- Verified pricing, Stored best, sorting, transactions, ownership, Bazaar Add, item.php, and Trade semantics remain unchanged.
